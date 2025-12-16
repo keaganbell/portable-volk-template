@@ -35,11 +35,13 @@ bool vulkan_create_instance(VkInstance *inst) {
 int main(void) {
 
     if (volkInitialize() != VK_SUCCESS) return 1;
+    print_info("Volk - Intialize successfully!");
 
     VkInstance instance = 0;
     if (!vulkan_create_instance(&instance)) return 1;
-
     volkLoadInstance(instance);
+    print_info("Vulkan - Intialize successfully!");
+
 
     return 0;
 }

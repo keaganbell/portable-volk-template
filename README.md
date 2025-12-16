@@ -1,12 +1,12 @@
 # Summary
 
-This is a repo that provides a portable template for vulkan using volk and nob. The only external dependencies are vulkan-1.dll or libvulkan.so which is typically shipped with GPU drivers.
+This is a repo that provides a portable template for vulkan using volk and nob on windows with msvc compiler. The only external dependency is vulkan-1.dll which is typically shipped with GPU drivers.
 
 ## Build
-Just bootstrap nob and run ./nob
+Be in an msvc developer environment then just bootstrap nob and run ./nob.exe
 
 ```cmd
-cc -o nob.exe nob.c
+cl -Fenob.exe -nologo nob.c -link -incremental:no
 ```
 
 ```cmd
