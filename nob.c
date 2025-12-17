@@ -1,11 +1,14 @@
 #define NOB_IMPLEMENTATION
 #include "nob.h"
 
+//#define USE_CL (1)
+
 int main(int argc, char **argv) {
     NOB_GO_REBUILD_URSELF(argc, argv);
     
     if (!nob_mkdir_if_not_exists("build")) return 1;
 
+#if defined(USE_CL)
     Nob_Cmd compile = {0};
     nob_cmd_append(&compile, "cl.exe");
     nob_cmd_append(&compile, "-Zi", "-MT", "-nologo", "-FC", "-FS");
@@ -19,6 +22,16 @@ int main(int argc, char **argv) {
     nob_cmd_append(&compile, "-incremental:no");
     nob_cmd_append(&compile, "-pdb:build\\terger_linker.pdb");
     if (!nob_cmd_run(&compile)) return 1;
+#else
+    Nob_Cmd compile = {0};
+    nob_cmd_append(&compile, "gcc");
+    nob_cmd_append(&compile, "-Wall", "-Wextra");
+    nob_cmd_append(&compile, "-o" "build\\tergen.exe");
+    nob_cmd_append(&compile, "-Icode");
+    nob_cmd_append(&compile, "-DVOLK_VULKAN_H_PATH=\"vulkan/vulkan.h\"");
+    nob_cmd_append(&compile, "code/main.c");
+    if (!nob_cmd_run(&compile)) return 1;
+#endif
 
     return 0;
 }
