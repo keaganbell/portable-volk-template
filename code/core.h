@@ -12,6 +12,8 @@ typedef enum {
     Log_Level_Error,
 } Log_Level;
 
+#define print_error(str, ...) print_log(Log_Level_Error, str, __FILE__, __LINE__, ##__VA_ARGS__)
+#define print_info(str, ...) print_log(Log_Level_Info, str, __FILE__, __LINE__, ##__VA_ARGS__)
 static inline void print_log(Log_Level level, char *fmt, char *filename, int line_number, ...) {
     char buf[1<<12];
     va_list args;
@@ -28,8 +30,6 @@ static inline void print_log(Log_Level level, char *fmt, char *filename, int lin
         } break;
     }
 }
-#define print_error(str, ...) print_log(Log_Level_Error, str, __FILE__, __LINE__, ##__VA_ARGS__)
-#define print_info(str, ...) print_log(Log_Level_Info, str, __FILE__, __LINE__, ##__VA_ARGS__)
 
 #define array_count(x) ((sizeof(x)/sizeof(*(x))))
 
@@ -63,10 +63,12 @@ static inline void print_log(Log_Level level, char *fmt, char *filename, int lin
         (arr)->count += item_count;                                         \
     } while(0)
 
-#define kabarr_remove_unordered(arr, index)                                                     \
-    do {                                                                                        \
-        memcpy((arr)->items + index, (arr)->items + (arr)->count - 1, sizeof(*(arr)->items))    \
-        --(arr)->count;                                                                         \
+#define kabarr_remove_unordered(arr, index)                                                         \
+    do {                                                                                            \
+        if ((index) >= 0 && (index) < (arr)->count) {                                               \
+            memcpy((arr)->items + index, (arr)->items + (arr)->count - 1, sizeof(*(arr)->items))    \
+            --(arr)->count;                                                                         \
+        }                                                                                           \
     } while(0)
 
 #define kabarr_free(arr)                    \
@@ -76,3 +78,42 @@ static inline void print_log(Log_Level level, char *fmt, char *filename, int lin
             memset(arr, 0, sizeof(*(arr))); \
         }                                   \
     } while(0)
+
+typedef struct {
+    void *base;
+    size_t used, capacity;
+} Fixed_Arena;
+
+#define arena_alloc(a, size)            \
+    do {                                \
+        void *base = malloc(size);      \
+        memset(base, 0, size);          \
+        *(a) = arena_init(base, size);  \
+    } while(0)
+
+#define arena_free(a)       \
+    do {                    \
+        free((a)->base);    \
+        (a)->base = 0;      \
+    } while(0)
+
+static inline Fixed_Arena arena_init(void *base, size_t size) {
+    Fixed_Arena result = {0};
+    result.base = base;
+    result.capacity = size;
+    return result;
+}
+
+#define push_struct(a, t) (t *)arena_push(a, sizeof(t))
+#define push_array(a, t, c) (t *)arena_push(a, (c)*sizeof(t))
+static inline void *arena_push(Fixed_Arena *arena, size_t size) {
+    void *result = 0;
+    if (arena->base && arena->used + size < arena->capacity) {
+        result = (uint8_t *)arena->base + arena->used;
+        arena->used += size;
+        memset(result, 0, size);
+    }
+    return result;
+}
+
+#define arena_reset(a) (a)->used = 0
